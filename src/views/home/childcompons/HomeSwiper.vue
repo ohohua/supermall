@@ -1,9 +1,9 @@
 <template>
   <div class="swiperbox">
     <swiper>
-      <swiper-item v-for="(item,index) in banners" :key="index">
-        <a :href="item.link">
-          <img :src="item.image" alt="">
+      <swiper-item v-for="(value,key) in banners" :key="key">
+        <a :href="value.link">
+          <img :src="value.image" alt="">
         </a>
       </swiper-item>
     </swiper>
