@@ -1,10 +1,11 @@
 <template>
   <div class="swiperbox">
     <swiper>
-      <swiper-item v-for="(value,key) in banners" :key="key">
-        <a :href="value.link">
-          <img :src="value.image" alt="">
+      <swiper-item>
+        <a :href="value.link" slot="slideShow">
+          <img :src="value.image" alt />
         </a>
+        <span slot="bar"></span>
       </swiper-item>
     </swiper>
 

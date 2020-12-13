@@ -1,14 +1,19 @@
 <template>
   <div class="slide">
-    <div class="slideShow" v-for="(value,key) in banners" :key="key" v-show="key === currIndex">
-      <a :href="value.link">
+
+     <div class="slideShow" >
+      <a :href="value.link" 
+      v-for="(value,key) in banners" :key="key" v-show="key === currIndex"
+      >
         <img :src="value.image" alt />
       </a>
     </div>
 
     <div class="bar">
-      <span v-for="(value,key) in banners" :key="key" :class="{'active': key === currIndex}" @click="clickPoint(key)"></span>
-    </div>
+     <span v-for="(value,key) in banners" :key="key" :class="{'active': key === currIndex}" @mouseover="mouseOver(key)"></span> 
+    </div> 
+
+    <slot></slot>
   </div>
 </template>
 <script>
@@ -38,8 +43,7 @@ export default {
         this.currIndex %= this.banners.length
       }, 3000);
     },
-    clickPoint(key) {
-      console.log(event);
+    mouseOver(key) {
       clearInterval(this.clearTime)
       this.currIndex = key
       this.beginPlay()
@@ -51,6 +55,7 @@ export default {
 <style>
   .slide{
     position: relative;
+    /* padding-top: 44px; */
   }
   .slideShow{
     width: 100%;
@@ -60,22 +65,22 @@ export default {
   }
 
   .bar{
-  width: 100%;
-  position: absolute;
-  margin-top: -30px; 
-  z-index: 10;
-  display: flex;
-  justify-content: center;
+    width: 100%;
+    position: absolute;
+    margin-top: -30px; 
+    z-index: 1;
+    display: flex;
+    justify-content: center;
 
   }
   .bar span{
     width: 10px;
     height: 10px;
     border-radius: 5px;
-    background-color: white;
+    background-color: rgba(92, 88, 88, 0.205);
     margin-left: 10px;
   }
   .active {
-    background-color: black !important;
+    background-color: white !important;
   }
 </style>
