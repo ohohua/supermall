@@ -1,16 +1,17 @@
 <template>
-  <div class="slide">
-    <div class="slideShow">
-      <a :href="value.link" v-for="(value,key) in banners" :key="key" v-show="key === currIndex">
-        <img :src="value.image" @load="swiperimageload" />
-      </a>
+  <div class="detailslide">
+    <div class="detailslidShow">
+        <div v-for="(value,key) in topImages" :key="key" v-show="key === currIndex" >
+          <img :src="value" @load="detailImgLoad" class="imgs"/>
+        </div>
     </div>
-    <div class="bar">
+    <div class="detailbar">
       <span
-        v-for="(value,key) in banners"
+        v-for="(value,key) in topImages"
         :key="key"
-        :class="{'swiper-active': key === currIndex}"
-        @click="mouseOver(key)"
+        :class="{'detailbar-active': key === currIndex}"
+        @click="mouseOver(key)" 
+        v-show="topImages.length > 1"
       ></span>
     </div>
   </div>
@@ -21,11 +22,10 @@ export default {
     return {
       currIndex: 0,
       clearTime: null,
-      imgisLoad: false,
     };
   },
   props: {
-    banners: {
+    topImages: {
       type: Array,
       default() {
         return [];
@@ -40,7 +40,7 @@ export default {
     beginPlay() {
       this.clearTime = setInterval(() => {
         this.currIndex++;
-        this.currIndex %= this.banners.length;
+        this.currIndex %= this.topImages.length;
       }, 3000);
     },
     mouseOver(key) {
@@ -48,30 +48,24 @@ export default {
       this.currIndex = key;
       this.beginPlay();
     },
-
-    swiperimageload() {
-      // 四张图片的高度都是一样的
-      if (!this.imgisLoad) {
-        this.$emit("swiperimageload");
-        this.imgisLoad = true;
-      }
-    },
+    detailImgLoad() {
+      this.$emit('detailImgLoad')
+    }
   },
 };
 </script>
 <style>
-.slide {
+.detailslide {
   position: relative;
-  /* padding-top: 44px; */
+  /* height: 300px;
+  overflow: hidden; */
 }
-.slideShow {
-  width: 100%;
+.detailslidShow {
+  /* width: 100%; */
+  height: 250px;
+  overflow: hidden;
 }
-.slideShow img {
-  width: 100%;
-}
-
-.bar {
+.detailbar {
   width: 100%;
   position: absolute;
   margin-top: -30px;
@@ -79,14 +73,14 @@ export default {
   display: flex;
   justify-content: center;
 }
-.bar span {
+.detailbar span {
   width: 10px;
   height: 10px;
   border-radius: 5px;
-  background-color: white;
+  background-color:white;
   margin-left: 10px;
 }
-.swiper-active {
-  background-color:orange !important;
+.detailbar-active {
+  background-color: orange !important;
 }
 </style>

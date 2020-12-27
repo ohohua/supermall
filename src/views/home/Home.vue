@@ -3,6 +3,12 @@
     <nav-bar class="home-nav">
       <slot slot="center">购物街</slot>
     </nav-bar>
+     <tab-control :title="['流行','新款','精选']"  
+                   @SwitchClick="change" 
+                   ref="tabcontrol1"
+                   v-show="isTabFixed"
+                   class="tab-control1"/>
+
     <scroll class="content" 
             ref="scroll" 
             @scroll="contentScroll" 
@@ -10,11 +16,14 @@
             @pullUpLoad="loadMore"
             :pull-up-load="true">
       <!-- <home-swiper :banners='banners'/> -->
-      <swiper :banners="banners" />
+      <swiper :banners="banners" 
+              @swiperimageload="swiperimageload"/>
       <home-recomend-view :recommends="recommends" />
       <feature-view />
-      <tab-control :title="['流行','新款','精选']" class="tab-control" @SwitchClick="change" /><!-- 子组件传过来的自定义事件 -->
-      <goods-list :Goods="goodsType" />
+      <tab-control :title="['流行','新款','精选']"  
+                   @SwitchClick="change" 
+                   ref="tabcontrol2"/><!-- 子组件传过来的自定义事件 -->
+      <goods-list :Goods="goodsType.list" />
     </scroll>
     <back-top @click.native="backTopclick" v-show="isShowBackTop"/><!-- 需要监听一个组件的原生事件时，必须给对应的事件加上.native修饰符 -->
   </div>
@@ -27,17 +36,19 @@ import FeatureView from "./childcompons/FeatureView";
 import TabControl from "components/content/tabControl/tabControl.vue";
 import GoodsList from "components/content/Goods/GoodsList.vue";
 import Scroll from "components/common/scroll/Scroll.vue";
-import BackTop from 'components/content/backtop/BackTop.vue'
+// import BackTop from 'components/content/backtop/BackTop.vue'
 
 import NavBar from "components/common/navbar/NavBar";
 import tabControl from "components/content/tabControl/tabControl";
 
 import { getHomeMultiData, getHomeGoods } from "network/home";
+import { debounce } from 'common/utils/debounce'
+import { BackTopMixin } from 'common/mixin.js'
 
 export default {
   name: "home",
+  mixins: [BackTopMixin],
   components: {
-    // HomeSwiper,
     Swiper,
     HomeRecomendView,
     FeatureView,
@@ -45,7 +56,6 @@ export default {
     tabControl,
     GoodsList,
     Scroll,
-    BackTop
   },
   data() {
     return {
@@ -57,7 +67,10 @@ export default {
         sell: { page: 0, list: [] },
       },
       currentType: "pop",
-      isShowBackTop: false
+      tabcontroloffsetTop: 0,
+      isTabFixed: false,
+      saveY: 0,
+      itemImgListener: null
     };
   },
   computed: {
@@ -65,29 +78,11 @@ export default {
       return this.goods[this.currentType];
     },
   },
-  created() {
-    // 1.请求多个数据
-    this.getHomeMultiData();
-
-    // 2.请求商品数据
-    this.getHomeGoods("pop");
-    this.getHomeGoods("new");
-    this.getHomeGoods("sell");
-  },
-  mounted() {
-
-    // 监听事件总线
-    this.$bus.$on("itemImgLoad", () => {
-    this.$refs.scroll && this.$refs.scroll.refresh();
-    // 图片加载可能很快（在组件create阶段）， 甚至在组件被挂载之前就请求完毕了，这时候在GoodsListItem里面的@load就将事件发送到事件总线上了。但是此时this.$refs.sroll 为undefine ， 就会报错，所以这样处理 &&
-    });
-  },
   methods: {
     /**
      * 事件监听相关方法
      */
     change(key) {
-      // console.log(key);
       switch (key) {
         case 0:
           this.currentType = "pop";
@@ -98,19 +93,19 @@ export default {
         case 2:
           this.currentType = "sell";
       }
+      // 保持当前两个tabcontrol被选中的是一致的
+      // 通过改变两tabcontrol内部的isActive来改变被选中的item
+      this.$refs.tabcontrol1.isActive = key
+      this.$refs.tabcontrol2.isActive = key
     },
-    /**
-     * 返回顶部
-     * scrollTo(0, 0, 500),better-scroll 方法
-     * 参数分别是x， y， 返回所用的时间
-     */
-    backTopclick() {
-      this.$refs.scroll.scroll.scrollTo(0, 0, 500)
-    },
+
 
     // 监听滚动距离
     contentScroll(position) {
+      // 1. backTop是否出现
       this.isShowBackTop = (-position.y) > 1000 
+      // 2. 滚动的距离是否大于tabcontrol 的 offsetTop
+      this.isTabFixed = (-position.y) >= this.tabcontroloffsetTop
     },
 
     // 上拉加载更多
@@ -120,6 +115,15 @@ export default {
       // 完成上拉加载更多后调用
       this.$refs.scroll.finishPullUp()
     },
+
+    // 监听轮播图加载完成 来计算tobcontrol的offsetTop
+    swiperimageload() {
+      // 获取tabControl的offsetTop
+      // $el 可以拿到子组件里面所有的元素
+      this.tabcontroloffsetTop = this.$refs.tabcontrol2.$el.offsetTop
+      // console.log(this.$refs.tabcontrol.$el.offsetTop);
+    },
+
 
     /**
      * 网络请求相关方法
@@ -141,6 +145,35 @@ export default {
       });
     },
   },
+  created() {
+    // 1.请求多个数据
+    this.getHomeMultiData();
+
+    // 2.请求商品数据
+    this.getHomeGoods("pop");
+    this.getHomeGoods("new");
+    this.getHomeGoods("sell");
+  },
+  mounted() {
+    // 1.图片加载完的事件监听
+    const newrefresh = debounce(this.$refs.scroll.refresh, 100)
+    // 监听事件总线
+    this.itemImgListener = () => {
+      newrefresh()
+    }
+    this.$bus.$on("itemImgLoad", this.itemImgListener);
+  },
+  activated () {
+    this.$refs.scroll.scrollTo(0, this.saveY)
+    // 为什么将这里的动画时间设置成0， 就会返回顶部？？？
+    this.$refs.scroll.refresh()
+  },
+  deactivated () {
+    // 保存Y值
+    this.saveY = this.$refs.scroll.getScrollY()
+    // 取消全局事件的监听
+    this.$bus.$off('itemImgLoad', this.itemImgListener)
+  }
 };
 </script>
 <style scoped>
@@ -156,16 +189,15 @@ export default {
 .home-nav {
   background-color: var(--color-tint); /* 使用自定义的变量 */
   color: white;
-  position: fixed;
+  /* position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 9;
+  z-index: 9; */
 }
-.tab-control {
-  position: sticky; /* 移动端随便使用这个属性 */
-  top: 44px;
-  background-color: white;
+.tab-control1 {
+  position: relative;
+  background-color: #fff;
   z-index: 9;
 }
 

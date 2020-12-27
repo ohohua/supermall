@@ -1,7 +1,7 @@
 <template>
-  <div class="GoodsListItem">
-    <img :src="GoodsItem.show.img" alt="" @load="itemImgLoad"><!-- 监听是否加载完成 -->
-    <div class="goods-info">
+  <div class="GoodsListItem" >
+    <img v-lazy="getImgurl" alt="" @load="itemImgLoad" @click="itemClick"><!-- 监听是否加载完成 -->
+    <div class="goods-info">  
       <p>{{GoodsItem.title}}</p>
       <span class="price">{{GoodsItem.price}}</span>
       <span class="collect">{{GoodsItem.cfav}}</span>
@@ -21,10 +21,31 @@ export default {
       }
     }
   },
+  computed: {
+    getImgurl() {
+      return  this.GoodsItem.image || this.GoodsItem.show.img 
+      // return   this.GoodsItem.show.img || this.GoodsItem.image 
+
+    }
+  },
   methods: {
     itemImgLoad() {
+      // 现在是detail页面和home页面都用到了GoodList这个组件，所以要区分一下
+
+      // 方法一：仍然发送同一个事件，只是在某一组件destory的时候，取消的事件总线的监听就可以了
       this.$bus.$emit('itemImgLoad') /* 发射自定义事件给事件总线 */
-    }
+
+      // 方法2.通过路由来判断应该发送那个事件到事件总线上
+      // if(this.$route.path.indexOf('/home')) {
+      //   this.$bus.$emit('homeItemImgLoad')
+      // } else if (this.$route.path.indexOf('/detail')) {
+      //   this.$bus.$emit('detailItemImgLoad')
+      // }
+    },
+    itemClick() {
+      this.$router.push('/detail/' +  this.GoodsItem.iid)
+    },
+
   }
 
  }

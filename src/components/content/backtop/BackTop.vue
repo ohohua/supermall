@@ -1,6 +1,6 @@
 <template>
   <div class="back-top">
-    <img src="~assets/img/common/top.png" alt="">
+    <img src="~assets/img/common/top2.svg" alt="">
   </div>
 </template>
 
@@ -8,14 +8,6 @@
 
 export default {
   name:'backtop',
-  components: {},
-  data() {
-    return {
-
-    };
-  },
-
-
  }
 </script>
 <style scoped>
@@ -23,7 +15,7 @@ export default {
     position: fixed;
     right: 5px;
     bottom: 50px;
-    
+    z-index: 10;
   }
   .back-top img {
     width: 50px;
